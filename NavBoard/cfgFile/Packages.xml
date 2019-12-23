@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet file="Packages.xml" type="text/xsl"?>
+
+<Packages MaxSize="80Bytes">
+  <!--Package type catalog-->
+  <fType name="Heartbeat" id="0x01">
+    <member type="uint8_t">FrameIndex</member>
+  </fType>
+  <fType name="VersionReq" id="0x02">
+    <member type="uint8_t">VersionReq</member>
+  </fType>
+  <fType name="VersionAck" id="0x03">
+    <member type="uint16_t">Version</member>
+  </fType>
+  <fType name="IMU_6Dof" id="0x11">
+    <member type="float">accX</member>
+	<member type="float">accY</member>
+	<member type="float">accZ</member>
+	<member type="float">gyrX</member>
+	<member type="float">gyrY</member>
+	<member type="float">gyrZ</member>
+  </fType>
+  <fType name="ATT_QUAT" id="0x12">
+    <member type="float">qw</member>
+    <member type="float">qx</member>
+	<member type="float">qy</member>
+	<member type="float">qz</member>
+  </fType>
+  <fType name="IMU_9Dof" id="0x13">
+    <member type="float">accX</member>
+	<member type="float">accY</member>
+	<member type="float">accZ</member>
+	<member type="float">gyrX</member>
+	<member type="float">gyrY</member>
+	<member type="float">gyrZ</member>
+	<member type="float">magX</member>
+	<member type="float">magY</member>
+	<member type="float">magZ</member>
+  </fType>
+  <fType name="DebugData" id="0xDD">
+    <member type="float">fData1</member>
+	<member type="float">fData2</member>
+	<member type="float">fData3</member>
+	<member type="float">fData4</member>
+	<member type="float">fData5</member>
+	<member type="float">fData6</member>
+	<member type="float">fData7</member>
+	<member type="float">fData8</member>
+	<member type="float">fData9</member>
+  </fType>
+</Packages>
