@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet file="Packages.xml" type="text/xsl"?>
+
+<Packages MaxSize="80Bytes">
+  <!--Package type catalog-->
+  <fType name="Heartbeat" id="0x01">
+    <member type="uint8_t">FrameIndex</member>
+  </fType>
+  <fType name="VersionReq" id="0x02">
+    <member type="uint8_t">VersionReq</member>
+  </fType>
+  <fType name="VersionAck" id="0x03">
+    <member type="uint16_t">Version</member>
+  </fType>
+  <fType name="IMU_Info" id="0x11">
+    <member type="float">accX</member>
+	<member type="float">accY</member>
+	<member type="float">accZ</member>
+	<member type="float">gyrX</member>
+	<member type="float">gyrY</member>
+	<member type="float">gyrZ</member>
+  </fType>
+  <fType name="ATT_QUAT" id="0x12">
+    <member type="float">qw</member>
+    <member type="float">qx</member>
+	<member type="float">qy</member>
+	<member type="float">qz</member>
+  </fType>
+</Packages>
