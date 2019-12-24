@@ -5,17 +5,17 @@ import java.awt.BorderLayout;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 
-import MainFrame.MyMainFrame;
 import kyLinkWaveTool.kyLinkWTPane;
+import kyMainFrame.kyMainFrame;
 
-public class MainWindow extends MyMainFrame {
+public class MainWindow extends kyMainFrame {
 	private static final long serialVersionUID = 1L;
 
 	private JPanel MainPanel = null;
 
 	public MainWindow() {
 		this.setTitle("kyChu.kyLink Monitor");
-		this.setFrameSize(1300, 800);
+		this.setSize(1300, 800);
 		this.setLocationRelativeTo(null);
 		MainPanel = this.getUsrMainPanel();
 		MainPanel.setLayout(new BorderLayout());
@@ -24,7 +24,7 @@ public class MainWindow extends MyMainFrame {
 
 		MainPanel.add(wtPanel, BorderLayout.CENTER);
 
-		this.addDecodeEventListener(wtPanel);
+		this.addDecodeListener(wtPanel);
 
 		this.setResizable(false);
 		this.setVisible(true);
