@@ -2,13 +2,14 @@ package kySerialTool;
 
 import java.util.ArrayList;
 
+import CommTool.CommTool;
+import CommTool.exception.ReadDataFailure;
+import CommTool.exception.SendDataFailure;
 import jserial.kySerialDrv;
 import kySerialTool.serialException.NoSuchPort;
 import kySerialTool.serialException.PortOpenFailed;
-import kySerialTool.serialException.ReadDataFromSerialPortFailure;
-import kySerialTool.serialException.SendDataToSerialPortFailure;
 
-public final class kySerialTool {
+public final class kySerialTool extends CommTool {
 	private kySerialDrv serialDrv = null;
 	private ArrayList<String> portNameList = null;
 	private boolean serialOpened = false;
@@ -51,22 +52,22 @@ public final class kySerialTool {
 		return true;
 	}
 
-	public int sendData(byte[] data, int size) throws SendDataToSerialPortFailure {
+	public int sendData(byte[] data, int size) throws SendDataFailure {
 		int wr;
 		if(!serialOpened) return -1;
 		wr = serialDrv.send(data, size);
 		if(wr < 0) {
-			throw new SendDataToSerialPortFailure();
+			throw new SendDataFailure();
 		}
 		return wr;
 	}
 
-	public int readData(byte[] recv, int size) throws ReadDataFromSerialPortFailure {
+	public int readData(byte[] recv, int size) throws ReadDataFailure {
 		int rd;
 		if(!serialOpened) return -1;
 		rd = serialDrv.read(recv, size);
 		if(rd < 0) {
-			throw new ReadDataFromSerialPortFailure();
+			throw new ReadDataFailure();
 		}
 		return rd;
 	}
