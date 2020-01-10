@@ -12,9 +12,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 
-import gnu.io.SerialPortEvent;
-import gnu.io.SerialPortEventListener;
-import kyLink.kyLinkPackage;
+import CommTool.CommTool;
+import CommTool.exception.ReadDataFailure;
 import kyLink.decoder.kyLinkDecoder;
 import kyLink.event.kyLinkDecodeEvent;
 import kyLink.event.kyLinkDecodeEventListener;
@@ -24,22 +23,23 @@ import kySerialTool.kySerialTool;
 import kySerialTool.serialException.NoSuchPort;
 import kySerialTool.serialException.NotASerialPort;
 import kySerialTool.serialException.PortInUse;
-import kySerialTool.serialException.ReadDataFromSerialPortFailure;
-import kySerialTool.serialException.SendDataToSerialPortFailure;
-import kySerialTool.serialException.SerialPortInputStreamCloseFailure;
-import kySerialTool.serialException.SerialPortOutputStreamCloseFailure;
 import kySerialTool.serialException.SerialPortParameterFailure;
 import kySerialTool.serialException.TooManyListeners;
 
-public class kyMainFrame extends JFrame implements ChangeIfEventListener, SerialPortEventListener, kyLinkDecodeEventListener {
+public class kyMainFrame extends JFrame implements ChangeIfEventListener, kyLinkDecodeEventListener {
 	private static final long serialVersionUID = 112233L;
-
+	private static final int recv_cache_size = 1024;
 	private static final String kyFrameVersion = "V0.8.8 kyChu@2019/01/25 15:50";
 
 	private kySerialTool UartTool = null;
 	private kyLinkDecoder decoder = null;
 
+	private boolean _should_exit = false;
+
+	private Thread DataRecvTask = null;
 	private Thread SignalCheckTask = null;
+	
+	private byte[] recv_cache = null;
 	public kyMainFrame() {
 		try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -54,13 +54,11 @@ public class kyMainFrame extends JFrame implements ChangeIfEventListener, Serial
 		SignalCheckTask = new Thread(SignalCheckThread);
 
 		UartTool = new kySerialTool();
-		try {
-			UartTool.addEventListener(this);
-		} catch (TooManyListeners e) {
-			// TODO Auto-generated catch block
-			System.err.println("UartTool: Failed to add Event Listenr!!!");
-		}
-		(new Thread(UartRefreshThread)).start();
+		recv_cache = new byte[recv_cache_size];
+
+		DataRecvTask = new Thread(DataRecvThread);
+
+		DataRecvTask.start();
 		SignalCheckTask.start();
 	}
 
@@ -103,22 +101,8 @@ public class kyMainFrame extends JFrame implements ChangeIfEventListener, Serial
 		decoder.addDecodeListener(this);
 	}
 
-	public void TxPackage(kyLinkPackage pack) {
-		try {
-			UartTool.sendData(pack.getSendBuffer());
-		} catch (SendDataToSerialPortFailure | SerialPortOutputStreamCloseFailure e) {
-			// TODO Auto-generated catch block
-			System.err.println("Package Send Failed.");
-		}
-	}
-
-	public void TxBuffer(byte[] data) {
-		try {
-			UartTool.sendData(data);
-		} catch (SendDataToSerialPortFailure | SerialPortOutputStreamCloseFailure e) {
-			// TODO Auto-generated catch block
-			System.err.println("Data Send Failed.");
-		}
+	public CommTool getCommTool() {
+		return UartTool;
 	}
 
 	private ActionListener OpenPortListener = new ActionListener() {
@@ -157,57 +141,32 @@ public class kyMainFrame extends JFrame implements ChangeIfEventListener, Serial
 		}
 	};
 
-	@Override
-	public void serialEvent(SerialPortEvent serialPortEvent) {
-		// TODO Auto-generated method stub
-		switch (serialPortEvent.getEventType()) {
-			case SerialPortEvent.BI: // 10 通讯中断
-				System.err.println("UART Communicatoin Interrupt!");
-	    	break;
-	    	case SerialPortEvent.OE: // 7 溢位（溢出）错误
-	    	case SerialPortEvent.FE: // 9 帧错误
-	    	case SerialPortEvent.PE: // 8 奇偶校验错误
-	    	case SerialPortEvent.CD: // 6 载波检测
-	    	case SerialPortEvent.CTS: // 3 清除待发送数据
-	    	case SerialPortEvent.DSR: // 4 待发送数据准备好了
-	    	case SerialPortEvent.RI: // 5 振铃指示
-	    	case SerialPortEvent.OUTPUT_BUFFER_EMPTY: // 2 输出缓冲区已清空
-	    	break;
-	    	case SerialPortEvent.DATA_AVAILABLE: // 1 串口存在可用数据
-	    		byte[] data = null;
-				try {
-					data = UartTool.readData();
-					if (data == null || data.length < 1) {
-						System.err.println("No Valid Data. (maybe closed.)");
-					} else {
-						try {
-							decoder.push(data, data.length);
-						} catch (InterruptedException e) {
-							System.err.println("Failed to push data into decoder.");
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-				} catch (ReadDataFromSerialPortFailure | SerialPortInputStreamCloseFailure e) {
-					// TODO Auto-generated catch block
-					System.err.println("UartTool: Error while read data.");
-				}
-	    	break;
-		}
-	}
-
-	private Runnable UartRefreshThread = new Runnable() {
+	private Runnable DataRecvThread = new Runnable() {
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
-			while(true) {
-				if(UartTool != null) {
-					MainCP.setPortNameList(UartTool.refreshPortList());
-				}
-				try {
-					Thread.sleep(200);
-				} catch (InterruptedException e) {
-					System.err.println("UART Refresh Thread SLEEP EXCEPTION.");
+			int len;
+			while(!_should_exit) {
+				if(UartTool.isOpened()) {
+					try {
+						len = UartTool.readData(recv_cache, recv_cache_size);
+						if(len > 0) {
+							decoder.push(recv_cache, len);
+						}
+					} catch (ReadDataFailure e) {
+						// TODO Auto-generated catch block
+						System.err.println("UartTool: Error while read data.");
+					} catch (InterruptedException e) {
+						System.err.println("Failed to push data into decoder.");
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} else {
+					try {
+						Thread.sleep(200);
+					} catch (InterruptedException e) {
+						System.err.println("UART Refresh Thread SLEEP EXCEPTION.");
+					}
 				}
 			}
 		}
@@ -220,21 +179,30 @@ public class kyMainFrame extends JFrame implements ChangeIfEventListener, Serial
 			// TODO Auto-generated method stub
 			int SignalLostCnt = 0;
 			while(true) {
-				if(GotResponseFlag == false) {
-					if(SignalLostCnt < 10) {
-						SignalLostCnt ++;
-					} else {
-						if(SignalLostCnt < 11) {
+				if(UartTool.isOpened()) {
+					if(GotResponseFlag == false) {
+						if(SignalLostCnt < 10) {
 							SignalLostCnt ++;
-							MainCP.indicateConnectionState(false);
-							MainCP.setDebugInfo("Signal Lost.");
+						} else {
+							if(SignalLostCnt < 11) {
+								SignalLostCnt ++;
+								MainCP.indicateConnectionState(false);
+								MainCP.setDebugInfo("Signal Lost.");
+							}
 						}
+					} else {
+						SignalLostCnt = 0;
+						GotResponseFlag = false;
+						MainCP.indicateConnectionState(true);
+						MainCP.setDebugInfo("frame rate: " + decoder.frameRate());
 					}
 				} else {
-					SignalLostCnt = 0;
-					GotResponseFlag = false;
-					MainCP.indicateConnectionState(true);
-					MainCP.setDebugInfo("frame rate: " + decoder.frameRate());
+					MainCP.setPortNameList(UartTool.refreshPortList());
+					try {
+						Thread.sleep(200);
+					} catch (InterruptedException e) {
+						System.err.println("UART Refresh Thread SLEEP EXCEPTION.");
+					}
 				}
 				try {
 					Thread.sleep(100);
@@ -268,7 +236,8 @@ public class kyMainFrame extends JFrame implements ChangeIfEventListener, Serial
 		@Override
 		public void windowClosing(WindowEvent e) {
 			// TODO Auto-generated method stub
-			if(UartTool != null) {
+			_should_exit = true;
+			if(UartTool.isOpened()) {
 				UartTool.closePort();
 			}
 			try {
@@ -294,7 +263,7 @@ public class kyMainFrame extends JFrame implements ChangeIfEventListener, Serial
 		if(s.equals("UART")) {
 			MainCP.setPanelType(ConnectPanel.PanelTypeUART);
 		} else if(s.equals("WIFI")) {
-			if(UartTool != null) {
+			if(UartTool.isOpened()) {
 				UartTool.closePort();
 			}
 			MainCP.setPortConfigPanelState(true);
