@@ -13,8 +13,6 @@ import javax.swing.JPanel;
 import javax.swing.UIManager;
 
 import kyLink.kyLinkPackage;
-//import gnu.io.SerialPortEvent;
-//import gnu.io.SerialPortEventListener;
 import kyLink.decoder.kyLinkDecoder;
 import kyLink.event.kyLinkDecodeEvent;
 import kyLink.event.kyLinkDecodeEventListener;
@@ -23,14 +21,9 @@ import kyMainFrame.optEvent.ChangeIfEventListener;
 import kySerialTool.kySerialTool;
 import kySerialTool.serialException.NoSuchPort;
 import kySerialTool.serialException.PortOpenFailed;
-//import kySerialTool.serialException.NotASerialPort;
-//import kySerialTool.serialException.PortInUse;
 import kySerialTool.serialException.ReadDataFromSerialPortFailure;
 import kySerialTool.serialException.SendDataToSerialPortFailure;
-//import kySerialTool.serialException.SerialPortInputStreamCloseFailure;
-//import kySerialTool.serialException.SerialPortParameterFailure;
-//import kySerialTool.serialException.TooManyListeners;
-//SerialPortEventListener, 
+
 public class kyMainFrame extends JFrame implements ChangeIfEventListener, kyLinkDecodeEventListener {
 	private static final long serialVersionUID = 112233L;
 	private static final int recv_cache_size = 1024;
