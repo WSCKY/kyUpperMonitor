@@ -12,6 +12,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 
+import CommTool.CommTool;
+import CommTool.exception.ReadDataFailure;
+import CommTool.exception.SendDataFailure;
 import kyLink.kyLinkPackage;
 import kyLink.decoder.kyLinkDecoder;
 import kyLink.event.kyLinkDecodeEvent;
@@ -21,8 +24,6 @@ import kyMainFrame.optEvent.ChangeIfEventListener;
 import kySerialTool.kySerialTool;
 import kySerialTool.serialException.NoSuchPort;
 import kySerialTool.serialException.PortOpenFailed;
-import kySerialTool.serialException.ReadDataFromSerialPortFailure;
-import kySerialTool.serialException.SendDataToSerialPortFailure;
 
 public class kyMainFrame extends JFrame implements ChangeIfEventListener, kyLinkDecodeEventListener {
 	private static final long serialVersionUID = 112233L;
@@ -108,7 +109,7 @@ public class kyMainFrame extends JFrame implements ChangeIfEventListener, kyLink
 		byte[] txe = pack.getSendBuffer();
 		try {
 			UartTool.sendData(txe, txe.length);
-		} catch (SendDataToSerialPortFailure e) {
+		} catch (SendDataFailure e) {
 			// TODO Auto-generated catch block
 			System.err.println("Package Send Failed.");
 		}
@@ -118,10 +119,14 @@ public class kyMainFrame extends JFrame implements ChangeIfEventListener, kyLink
 		if(!UartTool.isOpened() || _close_port_req == true) return;
 		try {
 			UartTool.sendData(data, data.length);
-		} catch (SendDataToSerialPortFailure e) {
+		} catch (SendDataFailure e) {
 			// TODO Auto-generated catch block
 			System.err.println("Data Send Failed.");
 		}
+	}
+
+	public CommTool getCommTool() {
+		return UartTool;
 	}
 
 	private ActionListener OpenPortListener = new ActionListener() {
@@ -163,7 +168,7 @@ public class kyMainFrame extends JFrame implements ChangeIfEventListener, kyLink
 						if(len > 0) {
 							decoder.push(recv_cache, len);
 						}
-					} catch (ReadDataFromSerialPortFailure e) {
+					} catch (ReadDataFailure e) {
 						// TODO Auto-generated catch block
 						System.err.println("UartTool: Error while read data.");
 					} catch (InterruptedException e) {
