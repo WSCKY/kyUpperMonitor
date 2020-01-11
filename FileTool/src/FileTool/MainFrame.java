@@ -10,6 +10,8 @@ import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.UIManager;
 
+import CommTool.CommTool;
+import CommTool.exception.SendDataFailure;
 import event.CtrlEvent;
 import event.CtrlEventListener;
 import kyLink.kyLinkPackage;
@@ -27,6 +29,7 @@ public class MainFrame extends kyMainFrame implements Runnable, CtrlEventListene
 	private Semaphore opt_sem;
 	private CtrlInfo CtrlCmd;
 
+	private CommTool comTool = null;
 	kyLinkPackage txPack = null;
 	private Semaphore f_ack_sem;
 	private Semaphore f_dat_sem;
@@ -48,6 +51,8 @@ public class MainFrame extends kyMainFrame implements Runnable, CtrlEventListene
 		MainSplitPane.addComponentListener(compLis);
 
 		MainPanel.add(MainSplitPane);
+
+		comTool = this.getCommTool();
 
 		txPack = new kyLinkPackage();
 		txPack.dev_id = (byte)0x02;
@@ -109,7 +114,12 @@ public class MainFrame extends kyMainFrame implements Runnable, CtrlEventListene
 		txPack.addBytes(path, path.length, 5);
 		txPack.addByte((byte) 0, path.length + 5);
 		new_msg_type = 0;
-		this.TxPackage(txPack);
+		try {
+			comTool.sendPackage(txPack);
+		} catch (SendDataFailure e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		do {
 			try {
 				Thread.sleep(5);
@@ -134,7 +144,12 @@ public class MainFrame extends kyMainFrame implements Runnable, CtrlEventListene
 				txPack.addByte((byte)MsgType.OPT_LIST_DIR, 0); // OptCmd
 				txPack.addByte((byte)0, 1); // OptSta
 				txPack.addInteger(recvMsg.data.DataId, 2);
-				this.TxPackage(txPack);
+				try {
+					comTool.sendPackage(txPack);
+				} catch (SendDataFailure e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 				timeout = 0;
 				while(new_msg_type == 0 && timeout < 200) {
 					try {
@@ -184,7 +199,12 @@ public class MainFrame extends kyMainFrame implements Runnable, CtrlEventListene
 		byte[] path = name.getBytes();
 		txPack.addBytes(path, path.length, 5);
 		txPack.addByte((byte) 0, path.length + 5);
-		this.TxPackage(txPack);
+		try {
+			comTool.sendPackage(txPack);
+		} catch (SendDataFailure e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		if(wait_for_ack(MsgType.OPT_CREATE, 500) == 0) { // wait 500ms
 			infoPanel.logln("create done! ret = " + recvMsg.ack.OptSta);
 		} else {
@@ -212,7 +232,12 @@ public class MainFrame extends kyMainFrame implements Runnable, CtrlEventListene
 		byte[] path = name.getBytes();
 		txPack.addBytes(path, path.length, 5);
 		txPack.addByte((byte) 0, path.length + 5);
-		this.TxPackage(txPack);
+		try {
+			comTool.sendPackage(txPack);
+		} catch (SendDataFailure e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		if(wait_for_ack(MsgType.OPT_DELETE, 500) == 0) { // wait 500ms
 			infoPanel.logln("delete done! ret = " + recvMsg.ack.OptSta);
 		} else {
