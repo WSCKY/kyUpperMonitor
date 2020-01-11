@@ -47,7 +47,7 @@ public class MainFrame extends kyMainFrame implements ChangeListener {
 		try {
 			if(System.getProperty("os.name").equals("Linux"))
 				wtPanel.setConfigFile("/home/kychu/JavaProj/kyUpperMonitor/NavBoard/cfgFile/Navigation.pdesc");
-			else if(System.getProperty("os.name").equals("Windows"))
+			else if(System.getProperty("os.name").contains("Windows"))
 				wtPanel.setConfigFile("C:\\kyChu\\MyMonitor\\NavBoard\\cfgFile\\Navigation.pdesc");
 		} catch (DocumentException e) {
 			// TODO Auto-generated catch block
