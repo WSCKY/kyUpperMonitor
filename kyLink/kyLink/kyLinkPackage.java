@@ -111,8 +111,12 @@ public class kyLinkPackage {
 		int c = (rData[pos] & 0xFF) | ((rData[pos + 1] << 8) & 0xFF00) | ((rData[pos + 2] << 24) >>> 8) | (rData[pos + 3] << 24);
 		return c;
 	}
-	public char readoutCharacter(int pos) {
-		char c = (char) (rData[pos] & 0xFF | ((rData[pos + 1] << 8) & 0xFF00));
+	public short readoutShort(int pos) {
+		short c = (short) ((rData[pos] & 0xFF) | ((rData[pos + 1] << 8) & 0xFF00));
+		return c;
+	}
+	public int readoutUShort(int pos) {
+		int c = (int) ((rData[pos] & 0xFF) | ((rData[pos + 1] << 8) & 0xFF00));
 		return c;
 	}
 	public String readoutString(int pos, int len) {
@@ -125,7 +129,7 @@ public class kyLinkPackage {
 		if(type.equals("uint8_t")) {
 			return (double)(rData[pos] & 0xFF);
 		} else if(type.equals("uint16_t")) {
-			return (double)(readoutCharacter(pos));
+			return (double)(readoutUShort(pos));
 		} else if(type.equals("uint32_t")) {
 			return (double)(readoutInteger(pos));
 		} else if(type.equals("float")) {
