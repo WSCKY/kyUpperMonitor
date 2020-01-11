@@ -28,10 +28,11 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import CommTool.CommTool;
+import CommTool.exception.SendDataFailure;
 import kyLink.kyLinkPackage;
 import kyLink.event.kyLinkDecodeEvent;
 import kyLink.event.kyLinkDecodeEventListener;
-import kyMainFrame.kyMainFrame;
 
 public class ConfigPane extends JPanel implements Runnable, kyLinkDecodeEventListener {
 	private static final long serialVersionUID = 1L;
@@ -50,13 +51,14 @@ public class ConfigPane extends JPanel implements Runnable, kyLinkDecodeEventLis
 	private JCheckBox SND_EN = new JCheckBox("发送使能");
 	private JCheckBox AutoSND_EN = new JCheckBox("自动发送");
 
-	private kyMainFrame FatherFrame = null;
+//	private kyMainFrame FatherFrame = null;
+	private CommTool comTool = null;
 	private kyLinkPackage txData = null;
 	private kyLinkPackage rxData = null;
 	private Semaphore semaphore = null;
 
-	public ConfigPane(kyMainFrame Parent) {
-		FatherFrame = Parent;
+	public ConfigPane(CommTool cTool) {
+		this.comTool = cTool;
 		CtrlPanel.setLayout(new GridLayout(4, 1, 0, 0));
 
 		DisLab.setFont(new Font("宋体", Font.BOLD, 40));
@@ -209,7 +211,12 @@ public class ConfigPane extends JPanel implements Runnable, kyLinkDecodeEventLis
 		txData.addByte((byte) (SND_EN.isSelected() ? 1 : 0), 2);
 		txData.addInteger(DeadbandSlider.getValue() * 920, 3);
 		txData.addInteger(0, 7);
-		FatherFrame.TxPackage(txData);
+		try {
+			comTool.sendPackage(txData);
+		} catch (SendDataFailure e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override

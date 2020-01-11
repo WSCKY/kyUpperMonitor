@@ -31,7 +31,7 @@ public class MainWindow extends kyMainFrame {
 		MainTabPane.addTab("WaveTool", null, wtPanel, "Wave Tool");
 		this.addDecodeListener(wtPanel);
 
-		ConfigPane cfgPanel = new ConfigPane(this);
+		ConfigPane cfgPanel = new ConfigPane(this.getCommTool());
 		MainTabPane.addTab("Settings", null, cfgPanel, "Configure");
 		this.addDecodeListener(cfgPanel);
 
