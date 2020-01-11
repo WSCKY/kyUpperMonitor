@@ -133,7 +133,10 @@ public class MyCube3D extends Canvas3D implements Runnable, kyLinkDecodeEventLis
 		ObjectFile objFile = new ObjectFile(ObjectFile.RESIZE);// , 100);
 		Scene scenen = null;
 		try {
-			scenen = objFile.load("C:\\kyChu\\MyMonitor\\resoure\\fighter_model\\atmo_fighter2.obj");
+			if(System.getProperty("os.name").equals("Linux"))
+				scenen = objFile.load("/home/kychu/JavaProj/kyUpperMonitor/resoure/fighter_model/atmo_fighter2.obj");
+			else if(System.getProperty("os.name").contains("Windows"))
+				scenen = objFile.load("C:\\kyChu\\MyMonitor\\resoure\\fighter_model\\atmo_fighter2.obj");
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("OBJ Module Load Failed" + e.getMessage());
