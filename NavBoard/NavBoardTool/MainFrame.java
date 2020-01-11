@@ -45,7 +45,10 @@ public class MainFrame extends kyMainFrame implements ChangeListener {
 		MainTabPane.addChangeListener(this);
 
 		try {
-			wtPanel.setConfigFile("C:\\kyChu\\MyMonitor\\NavBoard\\cfgFile\\Navigation.pdesc");
+			if(System.getProperty("os.name").equals("Linux"))
+				wtPanel.setConfigFile("/home/kychu/JavaProj/kyUpperMonitor/NavBoard/cfgFile/Navigation.pdesc");
+			else if(System.getProperty("os.name").equals("Windows"))
+				wtPanel.setConfigFile("C:\\kyChu\\MyMonitor\\NavBoard\\cfgFile\\Navigation.pdesc");
 		} catch (DocumentException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
