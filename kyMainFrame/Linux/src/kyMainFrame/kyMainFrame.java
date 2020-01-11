@@ -14,8 +14,6 @@ import javax.swing.UIManager;
 
 import CommTool.CommTool;
 import CommTool.exception.ReadDataFailure;
-import CommTool.exception.SendDataFailure;
-import kyLink.kyLinkPackage;
 import kyLink.decoder.kyLinkDecoder;
 import kyLink.event.kyLinkDecodeEvent;
 import kyLink.event.kyLinkDecodeEventListener;
@@ -102,27 +100,6 @@ public class kyMainFrame extends JFrame implements ChangeIfEventListener, kyLink
 	public void removeAllDecodeListeners() throws InterruptedException {
 		decoder.removeAllListeners();
 		decoder.addDecodeListener(this);
-	}
-
-	public void TxPackage(kyLinkPackage pack) {
-		if(!UartTool.isOpened() || _close_port_req == true) return;
-		byte[] txe = pack.getSendBuffer();
-		try {
-			UartTool.sendData(txe, txe.length);
-		} catch (SendDataFailure e) {
-			// TODO Auto-generated catch block
-			System.err.println("Package Send Failed.");
-		}
-	}
-
-	public void TxBuffer(byte[] data) {
-		if(!UartTool.isOpened() || _close_port_req == true) return;
-		try {
-			UartTool.sendData(data, data.length);
-		} catch (SendDataFailure e) {
-			// TODO Auto-generated catch block
-			System.err.println("Data Send Failed.");
-		}
 	}
 
 	public CommTool getCommTool() {
