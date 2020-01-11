@@ -179,30 +179,24 @@ public class kyMainFrame extends JFrame implements ChangeIfEventListener, kyLink
 			// TODO Auto-generated method stub
 			int SignalLostCnt = 0;
 			while(true) {
-				if(UartTool.isOpened()) {
-					if(GotResponseFlag == false) {
-						if(SignalLostCnt < 10) {
-							SignalLostCnt ++;
-						} else {
-							if(SignalLostCnt < 11) {
-								SignalLostCnt ++;
-								MainCP.indicateConnectionState(false);
-								MainCP.setDebugInfo("Signal Lost.");
-							}
-						}
+				if(GotResponseFlag == false) {
+					if(SignalLostCnt < 10) {
+						SignalLostCnt ++;
 					} else {
-						SignalLostCnt = 0;
-						GotResponseFlag = false;
-						MainCP.indicateConnectionState(true);
-						MainCP.setDebugInfo("frame rate: " + decoder.frameRate());
+						if(SignalLostCnt < 11) {
+							SignalLostCnt ++;
+							MainCP.indicateConnectionState(false);
+							MainCP.setDebugInfo("Signal Lost.");
+						}
 					}
 				} else {
+					SignalLostCnt = 0;
+					GotResponseFlag = false;
+					MainCP.indicateConnectionState(true);
+					MainCP.setDebugInfo("frame rate: " + decoder.frameRate());
+				}
+				if(!UartTool.isOpened()) {
 					MainCP.setPortNameList(UartTool.refreshPortList());
-					try {
-						Thread.sleep(200);
-					} catch (InterruptedException e) {
-						System.err.println("UART Refresh Thread SLEEP EXCEPTION.");
-					}
 				}
 				try {
 					Thread.sleep(100);
