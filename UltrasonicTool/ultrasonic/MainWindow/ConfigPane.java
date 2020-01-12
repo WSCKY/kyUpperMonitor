@@ -231,7 +231,7 @@ public class ConfigPane extends JPanel implements Runnable, kyLinkDecodeEventLis
 		// TODO Auto-generated method stub
 		rxData = (kyLinkPackage)arg0.getSource();
 		if(rxData.msg_id == (byte)0x22) {
-			dist = rxData.readoutCharacter(0) / 10.0;
+			dist = rxData.readoutUShort(0) / 10.0;
 			semaphore.release();
 		}
 	}

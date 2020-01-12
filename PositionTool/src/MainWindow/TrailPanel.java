@@ -228,7 +228,7 @@ public class TrailPanel extends JSplitPane implements configEventListener, kyLin
 		// TODO Auto-generated method stub
 		rxData = (kyLinkPackage) arg0.getSource();
 		if(rxData.msg_id == (byte) 0x56) {
-			gps_info.year = rxData.readoutCharacter(4);
+			gps_info.year = rxData.readoutUShort(4);
 			gps_info.month = rxData.rData[6];
 			gps_info.day = rxData.rData[7];
 			gps_info.hour = rxData.rData[8];

@@ -66,7 +66,7 @@ public class SimulatorPane extends JPanel implements Runnable, CoordTransEventLi
 		// TODO Auto-generated method stub
 		rxData = (kyLinkPackage)arg0.getSource();
 		if(rxData.msg_id == (byte)0x22) {
-			dist = rxData.readoutCharacter(0) / 1000.0;
+			dist = rxData.readoutUShort(0) / 1000.0;
 			semaphore.release();
 		}
 	}
