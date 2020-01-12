@@ -4,9 +4,9 @@ import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -157,31 +157,95 @@ public class CalibratePanel extends JSplitPane implements Runnable, CtrlEventLis
 	}
 
 	private void SaveToFile() {
-		String content = "A cat will append to the end of the file\n";
-		SimpleDateFormat df = new SimpleDateFormat("HH_mm_ss");
-		String FileName = ctrlPanel.getCalDataSavePath() + File.separator + df.format(new Date()) + ".dat";
-		System.out.println(FileName);
-		File file = new File(FileName);
-		if(!file.exists()) {
+		if(_calibrated_flag == true) {
+			int idx;
+			byte[] header = ".mcd\n".getBytes();
+			SimpleDateFormat df = new SimpleDateFormat("HH_mm_ss");
+			String FileName = ctrlPanel.getCalDataSavePath() + File.separator + df.format(new Date()) + ".dat";
+			System.out.println(FileName);
+//			byte[] b = Float2Bytes(12.4f);
+//			System.out.println("b[]: " + Byte2HexString(b[0]) + Byte2HexString(b[1]) + Byte2HexString(b[2]) + Byte2HexString(b[3]));
+//			System.out.println("float: " + Bytes2Float(b));
+			File file = new File(FileName);
+			if(!file.exists()) {
+				try {
+					file.createNewFile();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					System.err.println("Failed to create file " + FileName);
+					e.printStackTrace();
+				}
+			} else {
+				System.err.println("WARNING: file already exist!");
+			}
+			byte[] bytes = new byte[5 + 1 + 25 * ctrlPanel.getSensorNumber()];
+			System.arraycopy(header, 0, bytes, 0, header.length);
+			idx = header.length;
+			bytes[idx ++] = (byte) ctrlPanel.getSensorNumber();
+			for(int i = 0; i < ctrlPanel.getSensorNumber(); i ++) {
+				byte[] fb;
+				bytes[idx ++] = calRet[i].checksum();
+				fb = Float2Bytes(calRet[i].offX);
+				System.arraycopy(fb, 0, bytes, idx, 4);
+				idx += 4;
+				fb = Float2Bytes(calRet[i].offY);
+				System.arraycopy(fb, 0, bytes, idx, 4);
+				idx += 4;
+				fb = Float2Bytes(calRet[i].offZ);
+				System.arraycopy(fb, 0, bytes, idx, 4);
+				idx += 4;
+				fb = Float2Bytes(calRet[i].sclX);
+				System.arraycopy(fb, 0, bytes, idx, 4);
+				idx += 4;
+				fb = Float2Bytes(calRet[i].sclX);
+				System.arraycopy(fb, 0, bytes, idx, 4);
+				idx += 4;
+				fb = Float2Bytes(calRet[i].sclX);
+				System.arraycopy(fb, 0, bytes, idx, 4);
+				idx += 4;
+			}
 			try {
-				file.createNewFile();
+				FileOutputStream outputStream  = new FileOutputStream(file);
+				outputStream.write(bytes);
+	            outputStream.close();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-				System.err.println("Failed to create file " + FileName);
 				e.printStackTrace();
 			}
-		} else {
-			System.err.println("WARNING: file already exist!");
 		}
-		try {
-			FileWriter filewrite = new FileWriter(file.getName(), false);
-			BufferedWriter bufferWritter = new BufferedWriter(filewrite);
-			bufferWritter.write(content);
-	        bufferWritter.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	}
+
+//	private String Byte2HexString(byte b) {
+//		String hex = Integer.toHexString(b & 0xFF);
+//		if(hex.length() < 2) {
+//			hex = "0" + hex;
+//		}
+//		return hex;
+//	}
+//	private float Bytes2Float(byte[] b) {
+//		byte[] bs = {b[3], b[2], b[1], b[0]};
+//		DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bs));
+//		float f = 0.0f;
+//		try {
+//			f = dis.readFloat();
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		return f;
+//	}
+
+	private byte[] Float2Bytes(float f) {
+		byte[] b = new byte[4];
+		int data = Float.floatToIntBits(f);
+		b[0] = (byte)(data & 0xFF);
+		b[1] = (byte)((data & 0xFF00) >> 8);
+		b[2] = (byte)((data & 0xFF0000) >> 16);
+		b[3] = (byte)((data & 0xFF000000) >> 24);
+		return b;
 	}
 
 	@Override
