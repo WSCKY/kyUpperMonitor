@@ -32,8 +32,18 @@ public class ellipCalibration {
 		ellipsoid_step3(radius);
 	}
 
-	public float[] getCalibRet() {
-		return matrixM;
+//	public float[] getCalibRet() {
+//		return matrixM;
+//	}
+	public ellipParam getCalibRet() {
+		ellipParam param = new ellipParam();
+		param.offX = matrixM[0];
+		param.offY = matrixM[1];
+		param.offZ = matrixM[2];
+		param.sclX = matrixM[4];
+		param.sclY = matrixM[5];
+		param.sclZ = matrixM[6];
+		return param;
 	}
 
 	private void ellipsoid_init() {
@@ -119,4 +129,9 @@ public class ellipCalibration {
 	    matrixM[6] = (float) Math.sqrt((matrixM[3]) * matrixX[2] );
 	    System.out.println("ret: " + matrixM[0] + ", " + matrixM[1] + ", " + matrixM[2] + ", " + matrixM[3] + ", " + matrixM[4] + ", " + matrixM[5] + ", " + matrixM[6]);
 	}
+}
+
+class ellipParam {
+	float offX, offY, offZ;
+	float sclX, sclY, sclZ;
 }
