@@ -1,23 +1,25 @@
 package Calibration;
 
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.Semaphore;
 
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.vecmath.Color3f;
 import javax.vecmath.Vector3f;
 
+import Calibration.Event.CtrlEvent;
+import Calibration.Event.CtrlEventListener;
 import Calibration.Viewer3D.Viewer3D;
 import Calibration.Viewer3D.Component.Dot3D;
 import Calibration.ViewerChart.ViewerChart;
@@ -26,26 +28,18 @@ import kyLink.kyLinkPackage;
 import kyLink.event.kyLinkDecodeEvent;
 import kyLink.event.kyLinkDecodeEventListener;
 
-public class CalibratePanel extends JSplitPane implements Runnable, kyLinkDecodeEventListener {
+public class CalibratePanel extends JSplitPane implements Runnable, CtrlEventListener, kyLinkDecodeEventListener {
 	private static final long serialVersionUID = 1L;
-	
-	private static final float DEFAULT_RADIUS = 105;
 
 	private Viewer3D View3D = null;
 	private ViewerChart xyChart = null;
 	private ViewerChart xzChart = null;
 	private ViewerChart yzChart = null;
-// UI objects
-	JButton startBtn = null;
-	JButton stopButton = null;
-	JCheckBox ck_org = null;
-	JCheckBox ck_cal = null;
-	private JLabel idLabel = null;
-	private JLabel rateLabel = null;
-	private JLabel sampleLabel = null;
-//
-	private int SensorID = -1;
-	private Vector3f orgVal = null;
+
+	private CalibCtrlPanel ctrlPanel = null;
+
+	private float SensorValueRadius;
+	private Vector3f orgVal[] = null;
 	private Semaphore valMutex = null;
 	private Semaphore valUpdate = null;
 
@@ -54,18 +48,25 @@ public class CalibratePanel extends JSplitPane implements Runnable, kyLinkDecode
 	private int sample_counter = 0;
 	private ellipCalibration calibrater = null;
 
-	private Vector3f[] orgVal_save = null;
-	private Vector3f[] calVal_save = null;
+	private ellipParam[] calRet = null;
+	private Vector3f[][] orgVal_save = null;
+	private Vector3f[][] calVal_save = null;
 	private int org_dot_id = 0, cal_dot_id = 0;
 	public CalibratePanel() {
 		super(JSplitPane.HORIZONTAL_SPLIT);
 
-		orgVal = new Vector3f();
-		orgVal_save = new Vector3f[ellipCalibration.SAMPLE_NUMBER];
-		calVal_save = new Vector3f[ellipCalibration.SAMPLE_NUMBER];
-		for(int i = 0; i < ellipCalibration.SAMPLE_NUMBER; i ++) {
-			orgVal_save[i] = new Vector3f();
-			calVal_save[i] = new Vector3f();
+		orgVal = new Vector3f[CalibCtrlPanel.MAX_SUPPORT_SENSORS];
+		calRet = new ellipParam[CalibCtrlPanel.MAX_SUPPORT_SENSORS];
+		orgVal_save = new Vector3f[CalibCtrlPanel.MAX_SUPPORT_SENSORS][];
+		calVal_save = new Vector3f[CalibCtrlPanel.MAX_SUPPORT_SENSORS][];
+		for(int j = 0; j < CalibCtrlPanel.MAX_SUPPORT_SENSORS; j ++) {
+			orgVal[j] = new Vector3f();
+			orgVal_save[j] = new Vector3f[ellipCalibration.SAMPLE_NUMBER];
+			calVal_save[j] = new Vector3f[ellipCalibration.SAMPLE_NUMBER];
+			for(int i = 0; i < ellipCalibration.SAMPLE_NUMBER; i ++) {
+				orgVal_save[j][i] = new Vector3f();
+				calVal_save[j][i] = new Vector3f();
+			}
 		}
 		
 		valMutex = new Semaphore(1);
@@ -84,136 +85,131 @@ public class CalibratePanel extends JSplitPane implements Runnable, kyLinkDecode
 		ShowSP.setLayout(new GridLayout(2, 2, 0, 0));
 		ShowSP.add(View3D); ShowSP.add(xyChart); ShowSP.add(yzChart); ShowSP.add(xzChart);
 
-		this.setRightComponent(RightPanel());
+		ctrlPanel = new CalibCtrlPanel(this);
+		this.setRightComponent(ctrlPanel);
 		this.setLeftComponent(ShowSP);
 		this.setDividerLocation(0.5);
-		
+
 		this.setEnabled(false);
 		this.addComponentListener(compLis);
-		
+
 		(new Thread(this)).start();
 	}
 
-	private JPanel RightPanel() {
-		JPanel rightPanel = new JPanel();
-		rightPanel.setLayout(new GridLayout(3, 1));
-
-		startBtn = new JButton("START");
-		stopButton = new JButton("STOP");
-		ck_org = new JCheckBox("ORG", true);
-		ck_cal = new JCheckBox("CAL", false);
-
-		idLabel = new JLabel("sensor id: " + SensorID);
-		rateLabel = new JLabel("sample rate: 10Hz");
-		sampleLabel = new JLabel("samples: " + sample_counter + "/" + ellipCalibration.SAMPLE_NUMBER);
-		JPanel infoPanel = new JPanel();
-		infoPanel.setLayout(new GridLayout(3, 1));
-		infoPanel.add(idLabel);
-		infoPanel.add(rateLabel);
-		infoPanel.add(sampleLabel);
-
-		startBtn.setFont(new Font("Courier NEW", Font.BOLD, 24));
-		startBtn.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				// TODO Auto-generated method stub
-				if(_sample_enable == false) {
-					_sample_enable = true;
-					_calibrated_flag = false;
-					sample_counter = 0; // reset sample counter.
-					View3D.removeAllDot(org_dot_id);
-					View3D.removeAllDot(cal_dot_id);
-					startBtn.setEnabled(false);
-					System.out.println("sample start");
-				}
-			}
-		});
-
-		stopButton.setFont(new Font("Courier NEW", Font.BOLD, 24));
-		stopButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				if(_sample_enable == true) {
-					_sample_enable = false;
-					startBtn.setEnabled(true);
-				}
-			}
-		});
-		JPanel btnPanel = new JPanel();
-		btnPanel.setLayout(new GridLayout(2, 1));
-		btnPanel.add(startBtn);
-		btnPanel.add(stopButton);
-
-		ck_org.setFont(new Font("Courier NEW", Font.BOLD, 24));
-		ck_org.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				// TODO Auto-generated method stub
-				if(_calibrated_flag == true) {
-						if(ck_org.isSelected()) {
-							float x, y, z;
-							for(int i = 0; i < ellipCalibration.SAMPLE_NUMBER; i ++) {
-								x = orgVal_save[i].x / DEFAULT_RADIUS;
-								y = orgVal_save[i].y / DEFAULT_RADIUS;
-								z = orgVal_save[i].z / DEFAULT_RADIUS;
-								View3D.addDot3DTo(new Dot3D(x, y, z, new Color3f(1, 0, 0)), org_dot_id);
-							}
-						} else {
-							View3D.removeAllDot(org_dot_id);
-						}
-				} else ck_org.setSelected(true);
-			}
-		});
-
-		ck_cal.setFont(new Font("Courier NEW", Font.BOLD, 24));
-		ck_cal.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				// TODO Auto-generated method stub
-				if(_calibrated_flag == true) {
-						if(ck_cal.isSelected()) {
-							float x, y, z;
-							for(int i = 0; i < ellipCalibration.SAMPLE_NUMBER; i ++) {
-								x = calVal_save[i].x / DEFAULT_RADIUS;
-								y = calVal_save[i].y / DEFAULT_RADIUS;
-								z = calVal_save[i].z / DEFAULT_RADIUS;
-								View3D.addDot3DTo(new Dot3D(x, y, z, new Color3f(0, 0, 1)), cal_dot_id);
-							}
-						} else {
-							View3D.removeAllDot(cal_dot_id);
-						}
-				} else ck_cal.setSelected(false);
-			}
-		});
-		JPanel cbPanel = new JPanel();
-		cbPanel.setLayout(new GridLayout(2, 1));
-		cbPanel.add(ck_org);
-		cbPanel.add(ck_cal);
-
-		rightPanel.add(btnPanel);
-		rightPanel.add(cbPanel);
-		rightPanel.add(infoPanel);
-		return rightPanel;
+	private void startCalibrate() {
+		if(_sample_enable == false) {
+			_sample_enable = true;
+			_calibrated_flag = false;
+			sample_counter = 0; // reset sample counter.
+			SensorValueRadius = ctrlPanel.getSensorValueRadius();
+			View3D.removeAllDot(org_dot_id);
+			View3D.removeAllDot(cal_dot_id);
+			xyChart.removeAllDot2D();
+			xzChart.removeAllDot2D();
+			yzChart.removeAllDot2D();
+			ctrlPanel.operationForbidden();
+			System.out.println("sample start");
+		}
 	}
 
-	private void resetDividerLocation() {
-		int local = this.getWidth() / 3;
-		if(local > 320) local = 320;
-		this.setDividerLocation(this.getWidth() - local);
+	private void stopCalibrate() {
+		if(_sample_enable == true) {
+			_sample_enable = false;
+			ctrlPanel.operationAllowed();
 		}
-	private ComponentAdapter compLis = new ComponentAdapter() {
-		public void componentResized(ComponentEvent e) {
-			// TODO Auto-generated method stub
-			resetDividerLocation();
+	}
+
+	private void showCalibrate() {
+		if(_calibrated_flag == true) {
+			float x, y, z;
+			int id = ctrlPanel.getSelectedSensorID();
+			View3D.removeAllDot(cal_dot_id);
+			View3D.removeAllDot(org_dot_id);
+			xyChart.removeAllDot2D();
+			xzChart.removeAllDot2D();
+			yzChart.removeAllDot2D();
+			if(ctrlPanel.getOrgDataSelected()) {
+				for(int i = 0; i < ellipCalibration.SAMPLE_NUMBER; i ++) {
+					x = orgVal_save[id][i].x / SensorValueRadius;
+					y = orgVal_save[id][i].y / SensorValueRadius;
+					z = orgVal_save[id][i].z / SensorValueRadius;
+					View3D.addDot3DTo(new Dot3D(x, y, z, new Color3f(1, 0, 0)), org_dot_id);
+					xyChart.addDot2D(new Dot2D(x, y, Color.RED));
+					xzChart.addDot2D(new Dot2D(x, z, Color.RED));
+					yzChart.addDot2D(new Dot2D(y, z, Color.RED));
+				}
+			}
+			if(ctrlPanel.getCalDataSelected()) {
+				for(int i = 0; i < ellipCalibration.SAMPLE_NUMBER; i ++) {
+					x = calVal_save[id][i].x / SensorValueRadius;
+					y = calVal_save[id][i].y / SensorValueRadius;
+					z = calVal_save[id][i].z / SensorValueRadius;
+					View3D.addDot3DTo(new Dot3D(x, y, z, new Color3f(0, 0, 1)), cal_dot_id);
+					xyChart.addDot2D(new Dot2D(x, y, Color.BLUE));
+					xzChart.addDot2D(new Dot2D(x, z, Color.BLUE));
+					yzChart.addDot2D(new Dot2D(y, z, Color.BLUE));
+				}
+			}
+			xyChart.refresh();
+			xzChart.refresh();
+			yzChart.refresh();
 		}
-	};
+	}
+
+	private void SaveToFile() {
+		String content = "A cat will append to the end of the file\n";
+		SimpleDateFormat df = new SimpleDateFormat("HH_mm_ss");
+		String FileName = ctrlPanel.getCalDataSavePath() + File.separator + df.format(new Date()) + ".dat";
+		System.out.println(FileName);
+		File file = new File(FileName);
+		if(!file.exists()) {
+			try {
+				file.createNewFile();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				System.err.println("Failed to create file " + FileName);
+				e.printStackTrace();
+			}
+		} else {
+			System.err.println("WARNING: file already exist!");
+		}
+		try {
+			FileWriter filewrite = new FileWriter(file.getName(), false);
+			BufferedWriter bufferWritter = new BufferedWriter(filewrite);
+			bufferWritter.write(content);
+	        bufferWritter.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void UserCtrlCommand(CtrlEvent event) {
+		// TODO Auto-generated method stub
+		switch(event.getEventId()) {
+		case CtrlEvent.CTRL_EVENT_NULL:
+			break;
+		case CtrlEvent.CTRL_EVENT_START:
+			startCalibrate();
+			break;
+		case CtrlEvent.CTRL_EVENT_STOP:
+			stopCalibrate();
+			break;
+		case CtrlEvent.CTRL_EVENT_REFRESH:
+			showCalibrate();
+			break;
+		case CtrlEvent.CTRL_EVENT_SAVE:
+			SaveToFile();
+			break;
+		default: break;
+		}
+	}
 
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
 		float x, y, z;
-		float[] m;
 		while(true) {
 			try {
 				valUpdate.acquire();
@@ -228,32 +224,38 @@ public class CalibratePanel extends JSplitPane implements Runnable, kyLinkDecode
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				calibrater.setSampleVal(sample_counter, orgVal.x, orgVal.y, orgVal.z);
-				orgVal_save[sample_counter].x = orgVal.x;
-				orgVal_save[sample_counter].y = orgVal.y;
-				orgVal_save[sample_counter].z = orgVal.z;
-				sample_counter ++;
-				x = orgVal.x / DEFAULT_RADIUS;
-				y = orgVal.y / DEFAULT_RADIUS;
-				z = orgVal.z / DEFAULT_RADIUS;
+				int id = ctrlPanel.getSelectedSensorID();
+				for(int i = 0; i < ctrlPanel.getSensorNumber(); i ++) {
+					orgVal_save[i][sample_counter].x = orgVal[i].x;
+					orgVal_save[i][sample_counter].y = orgVal[i].y;
+					orgVal_save[i][sample_counter].z = orgVal[i].z;
+				}
 				valMutex.release();
+				x = orgVal_save[id][sample_counter].x / SensorValueRadius;
+				y = orgVal_save[id][sample_counter].y / SensorValueRadius;
+				z = orgVal_save[id][sample_counter].z / SensorValueRadius;
+				sample_counter ++;
 				View3D.addDot3DTo(new Dot3D(x, y, z, new Color3f(1, 0, 0)), org_dot_id);
-				xyChart.addDot2D(new Dot2D(x, y, Color.WHITE));
-				xzChart.addDot2D(new Dot2D(x, z, Color.WHITE));
-				yzChart.addDot2D(new Dot2D(y, z, Color.WHITE));
-				
-				idLabel.setText("sensor id: " + SensorID);
-				sampleLabel.setText("samples: " + sample_counter + "/" + ellipCalibration.SAMPLE_NUMBER);
-				
+				xyChart.addDot2D(new Dot2D(x, y, Color.RED));
+				xzChart.addDot2D(new Dot2D(x, z, Color.RED));
+				yzChart.addDot2D(new Dot2D(y, z, Color.RED));
+				xyChart.refresh();
+				xzChart.refresh();
+				yzChart.refresh();
 				if(sample_counter == ellipCalibration.SAMPLE_NUMBER) {
 					_sample_enable = false;
-					startBtn.setEnabled(true);
-					calibrater.computeRet(DEFAULT_RADIUS);
-					m = calibrater.getCalibRet();
-					for(int i = 0; i < ellipCalibration.SAMPLE_NUMBER; i ++) {
-						calVal_save[i].x = (orgVal_save[i].x + m[0]) * m[4];
-						calVal_save[i].y = (orgVal_save[i].y + m[1]) * m[5];
-						calVal_save[i].z = (orgVal_save[i].z + m[2]) * m[6];
+					ctrlPanel.operationAllowed();
+					for(int i = 0; i < ctrlPanel.getSensorNumber(); i ++) {
+						for(int j = 0; j < ellipCalibration.SAMPLE_NUMBER; j ++) {
+							calibrater.setSampleVal(j, orgVal_save[i][j].x, orgVal_save[i][j].y, orgVal_save[i][j].z);
+						}
+						calibrater.computeRet(SensorValueRadius);
+						calRet[i] = calibrater.getCalibRet();
+						for(int j = 0; j < ellipCalibration.SAMPLE_NUMBER; j ++) {
+							calVal_save[i][j].x = (orgVal_save[i][j].x + calRet[i].offX) * calRet[i].sclX;
+							calVal_save[i][j].y = (orgVal_save[i][j].y + calRet[i].offY) * calRet[i].sclY;
+							calVal_save[i][j].z = (orgVal_save[i][j].z + calRet[i].offZ) * calRet[i].sclZ;
+						}
 					}
 					_calibrated_flag = true;
 					System.out.println("calibrate done.");
@@ -273,10 +275,11 @@ public class CalibratePanel extends JSplitPane implements Runnable, kyLinkDecode
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			SensorID = rxData.rData[0];
-			orgVal.x = rxData.readoutShort(1);
-			orgVal.y = rxData.readoutShort(3);
-			orgVal.z = rxData.readoutShort(5);
+			for(int i = 0; i < ctrlPanel.getSensorNumber(); i ++) {
+				orgVal[i].x = rxData.readoutShort(i * 7 + 1);
+				orgVal[i].y = rxData.readoutShort(i * 7 + 3);
+				orgVal[i].z = rxData.readoutShort(i * 7 + 5);
+			}
 			valMutex.release();
 			valUpdate.release();
 		}
@@ -291,6 +294,18 @@ public class CalibratePanel extends JSplitPane implements Runnable, kyLinkDecode
 	public void lenOverFlow(kyLinkDecodeEvent arg0) {
 		// TODO Auto-generated method stub
 	}
+
+	private void resetDividerLocation() {
+		int local = this.getWidth() / 3;
+		if(local > 320) local = 320;
+		this.setDividerLocation(this.getWidth() - local);
+		}
+	private ComponentAdapter compLis = new ComponentAdapter() {
+		public void componentResized(ComponentEvent e) {
+			// TODO Auto-generated method stub
+			resetDividerLocation();
+		}
+	};
 
 	public static void main(String[] args) {
 		JFrame f = new JFrame("CalibPanel Test");
