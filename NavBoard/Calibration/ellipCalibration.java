@@ -134,4 +134,32 @@ public class ellipCalibration {
 class ellipParam {
 	float offX, offY, offZ;
 	float sclX, sclY, sclZ;
+
+	public byte checksum() {
+		byte sum;
+		byte[] ret;
+		ret = Float2Bytes(offX);
+		sum = (byte) (ret[0]^ret[1]^ret[2]^ret[3]);
+		ret = Float2Bytes(offY);
+		sum ^= (byte) (ret[0]^ret[1]^ret[2]^ret[3]);
+		ret = Float2Bytes(offZ);
+		sum ^= (byte) (ret[0]^ret[1]^ret[2]^ret[3]);
+		ret = Float2Bytes(sclX);
+		sum ^= (byte) (ret[0]^ret[1]^ret[2]^ret[3]);
+		ret = Float2Bytes(sclY);
+		sum ^= (byte) (ret[0]^ret[1]^ret[2]^ret[3]);
+		ret = Float2Bytes(sclZ);
+		sum ^= (byte) (ret[0]^ret[1]^ret[2]^ret[3]);
+		return sum;
+	}
+
+	private byte[] Float2Bytes(float f) {
+		byte[] b = new byte[4];
+		int data = Float.floatToIntBits(f);
+		b[0] = (byte)(data & 0xFF);
+		b[1] = (byte)((data & 0xFF00) >> 8);
+		b[2] = (byte)((data & 0xFF0000) >> 16);
+		b[3] = (byte)((data & 0xFF000000) >> 24);
+		return b;
+	}
 }
