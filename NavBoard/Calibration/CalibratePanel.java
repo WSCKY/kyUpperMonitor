@@ -112,6 +112,7 @@ public class CalibratePanel extends JSplitPane implements Runnable, kyLinkDecode
 		infoPanel.add(rateLabel);
 		infoPanel.add(sampleLabel);
 
+		startBtn.setFont(new Font("Courier NEW", Font.BOLD, 24));
 		startBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -128,6 +129,7 @@ public class CalibratePanel extends JSplitPane implements Runnable, kyLinkDecode
 			}
 		});
 
+		stopButton.setFont(new Font("Courier NEW", Font.BOLD, 24));
 		stopButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -139,10 +141,11 @@ public class CalibratePanel extends JSplitPane implements Runnable, kyLinkDecode
 			}
 		});
 		JPanel btnPanel = new JPanel();
+		btnPanel.setLayout(new GridLayout(2, 1));
 		btnPanel.add(startBtn);
 		btnPanel.add(stopButton);
 
-		ck_org.setFont(new Font("Courier NEW", Font.BOLD, 32));
+		ck_org.setFont(new Font("Courier NEW", Font.BOLD, 24));
 		ck_org.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -163,7 +166,7 @@ public class CalibratePanel extends JSplitPane implements Runnable, kyLinkDecode
 			}
 		});
 
-		ck_cal.setFont(new Font("Courier NEW", Font.BOLD, 32));
+		ck_cal.setFont(new Font("Courier NEW", Font.BOLD, 24));
 		ck_cal.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -184,6 +187,7 @@ public class CalibratePanel extends JSplitPane implements Runnable, kyLinkDecode
 			}
 		});
 		JPanel cbPanel = new JPanel();
+		cbPanel.setLayout(new GridLayout(2, 1));
 		cbPanel.add(ck_org);
 		cbPanel.add(ck_cal);
 
@@ -193,7 +197,11 @@ public class CalibratePanel extends JSplitPane implements Runnable, kyLinkDecode
 		return rightPanel;
 	}
 
-	private void resetDividerLocation() {this.setDividerLocation(this.getWidth() - 360);}
+	private void resetDividerLocation() {
+		int local = this.getWidth() / 3;
+		if(local > 320) local = 320;
+		this.setDividerLocation(this.getWidth() - local);
+		}
 	private ComponentAdapter compLis = new ComponentAdapter() {
 		public void componentResized(ComponentEvent e) {
 			// TODO Auto-generated method stub
