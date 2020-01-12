@@ -28,7 +28,7 @@ public class MainFrame extends kyMainFrame implements ChangeListener {
 
 	private MainFrame() {
 		this.setTitle("kyChu.NavBoard Monitor");
-		this.setSize(1000, 600);
+		this.setSize(1000, 800);
 		MainPanel = this.getUsrMainPanel();
 		MainPanel.setLayout(new BorderLayout());
 		MainTabPane = new JTabbedPane();
