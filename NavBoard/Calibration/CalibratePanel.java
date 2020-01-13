@@ -197,10 +197,10 @@ public class CalibratePanel extends JSplitPane implements Runnable, CtrlEventLis
 				fb = Float2Bytes(calRet[i].sclX);
 				System.arraycopy(fb, 0, bytes, idx, 4);
 				idx += 4;
-				fb = Float2Bytes(calRet[i].sclX);
+				fb = Float2Bytes(calRet[i].sclY);
 				System.arraycopy(fb, 0, bytes, idx, 4);
 				idx += 4;
-				fb = Float2Bytes(calRet[i].sclX);
+				fb = Float2Bytes(calRet[i].sclZ);
 				System.arraycopy(fb, 0, bytes, idx, 4);
 				idx += 4;
 			}
