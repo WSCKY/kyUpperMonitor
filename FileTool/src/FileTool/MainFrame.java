@@ -17,14 +17,17 @@ import event.CtrlEventListener;
 import kyLink.kyLinkPackage;
 import kyLink.event.kyLinkDecodeEvent;
 import kyMainFrame.kyMainFrame;
+import subPanel.CtrlInfo;
+import subPanel.CtrlPanel;
+import subPanel.LogPanel;
 
 public class MainFrame extends kyMainFrame implements Runnable, CtrlEventListener {
 	private static final long serialVersionUID = 1L;
 
 	private JPanel MainPanel = null;
 	private JSplitPane MainSplitPane = null;
-	private InfoFrame infoPanel = null;
-	private CtrlFrame ctrlPanel = null;
+	private LogPanel infoPanel = null;
+	private CtrlPanel ctrlPanel = null;
 
 	private Semaphore opt_sem;
 	private CtrlInfo CtrlCmd;
@@ -41,8 +44,8 @@ public class MainFrame extends kyMainFrame implements Runnable, CtrlEventListene
 		MainPanel.setLayout(new BorderLayout());
 		
 		MainSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-		infoPanel = new InfoFrame();
-		ctrlPanel = new CtrlFrame();
+		infoPanel = new LogPanel();
+		ctrlPanel = new CtrlPanel();
 		ctrlPanel.setCtrlEventListener(this);
 		MainSplitPane.setLeftComponent(ctrlPanel);
 		MainSplitPane.setRightComponent(infoPanel);

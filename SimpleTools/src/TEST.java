@@ -68,7 +68,7 @@ public static void main(String[] args) {
 //	System.out.println("");
 //}
 	
-	FileHexDump("/home/kychu/myWork/21_43_51.dat");
+	FileHexDump("/home/kychu/myWork/10_03_44.dat");
 	
 }
 }

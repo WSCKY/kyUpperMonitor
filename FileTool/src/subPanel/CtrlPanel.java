@@ -1,4 +1,4 @@
-package FileTool;
+package subPanel;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
@@ -13,7 +13,7 @@ import javax.swing.JTextField;
 import event.CtrlEvent;
 import event.CtrlEventListener;
 
-public class CtrlFrame extends JPanel {
+public class CtrlPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 
 	private JButton readFileBtn = null;
@@ -27,7 +27,7 @@ public class CtrlFrame extends JPanel {
 	private JTextField tarDir = null;
 	private JTextField tarFile = null;
 
-	public CtrlFrame() {
+	public CtrlPanel() {
 		readFileBtn = new JButton("read");
 		writeFileBtn = new JButton("write");
 		listDirButton = new JButton("listdir");
