@@ -5,18 +5,16 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 
-import kySocketTool.socketEvent.kySocketEvent;
-import kySocketTool.socketEvent.kySocketEventListener;
+import CommTool.CommTool;
+import CommTool.exception.ReadDataFailure;
 import kySocketTool.socketException.SocketInitFailed;
 
-public class kySocketTool implements Runnable {
+public class kySocketTool extends CommTool {
 	private int CommPort = 6000;
 	private DatagramSocket CommSocket = null;
 
-	private Thread RecvThread = null;
-	private kySocketEventListener Listener = null;
 	public kySocketTool() {
-		RecvThread = new Thread(this);
+
 	}
 
 	public void openPort() throws SocketInitFailed {
@@ -26,48 +24,34 @@ public class kySocketTool implements Runnable {
 			// TODO Auto-generated catch block
 			throw new SocketInitFailed();
 		}
-		RecvThread.start();
+		try {
+			CommSocket.setSoTimeout(100);
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public void setPort(int port) {
 		CommPort = port;
 	}
 
-	public void setListener(kySocketEventListener l) {
-		Listener = l;
-	}
-
-	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-		byte[] data = new byte[100];
-		DatagramPacket packet = new DatagramPacket(data, 0, data.length);
-		while(true) {
-			try {
-				CommSocket.receive(packet);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			if(Listener != null) {
-				Listener.kySocketRecvDataCallback(new kySocketEvent(new SocketDataPackage(packet.getData(), packet.getLength())));
-			}
+	public void closePort() {
+		if(CommSocket != null) {
+			CommSocket.close();
 		}
 	}
+
+	public int readData(byte[] recv, int size) throws ReadDataFailure {
+		DatagramPacket packet = new DatagramPacket(recv, 0, size);
+		try {
+			CommSocket.receive(packet);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+//			System.err.println("timeout");
+		}
+
+		return packet.getLength();
+	}
 }
 
-class SocketDataPackage {
-	private byte[] data = null;
-	private int length = 0;
-	public SocketDataPackage(byte[] d, int l) {
-		data = d;
-		length = l;
-	}
-
-	public int getLength() {
-		return length;
-	}
-	public byte[] getBytes() {
-		return data;
-	}
-}
