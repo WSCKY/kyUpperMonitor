@@ -43,6 +43,12 @@ public class FrameMenuBar extends JMenuBar implements ActionListener {
 		this.add(SettingMenu);
 	}
 
+	public String getInterfaceName() {
+		if(ItemUartIf.isSelected()) return "UART";
+		else if(ItemWifiIf.isSelected()) return "WIFI";
+		return "ERROR";
+	}
+
 	public void addChangeIfActionListener(ChangeIfEventListener listener) {
 		ListenerList.add(listener);
 	}
