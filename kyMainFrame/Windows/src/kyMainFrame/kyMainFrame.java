@@ -86,7 +86,7 @@ public class kyMainFrame extends JFrame implements ChangeIfEventListener, kyLink
 	private ConnectPanel MainCP = null;
 	/* main panel */
 	private JPanel UserMainPanel = null;
-	public void initGUI() {
+	private void initGUI() {
 		this.setTitle("kyChu.kyFrame");
 		this.setSize(1000, 600);
 		this.setResizable(true);
