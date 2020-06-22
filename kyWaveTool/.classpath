@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/home/kychu/JavaProj/kyUpperMonitor/jar/kyLink/kyLink.jar"/>
+	<classpathentry kind="lib" path="/home/kychu/JavaProj/kyUpperMonitor/jar/kySerial/kySerial.jar"/>
+	<classpathentry kind="lib" path="/home/kychu/JavaProj/kyUpperMonitor/jar/kyFrame/Linux/kyMainFrame.jar"/>
+	<classpathentry kind="lib" path="/home/kychu/JavaProj/kyUpperMonitor/jar/JFreeChart/jcommon-1.0.23.jar"/>
+	<classpathentry kind="lib" path="/home/kychu/JavaProj/kyUpperMonitor/jar/JFreeChart/jfreechart-1.0.19.jar"/>
+	<classpathentry kind="lib" path="/home/kychu/JavaProj/kyUpperMonitor/jar/kyLink/kyLinkWaveTool.jar"/>
+	<classpathentry kind="lib" path="/home/kychu/JavaProj/kyUpperMonitor/jar/DOM4J/dom4j-2.1.1.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
