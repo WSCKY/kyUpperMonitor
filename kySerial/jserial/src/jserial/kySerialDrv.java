@@ -16,7 +16,7 @@ public class kySerialDrv {
 	public native int serial_close();
 
 	static {
-		System.load("/home/kychu/JavaProj/kyUpperMonitor/kySerial/library/libkyserial.so");
+		System.load(System.getProperties().getProperty("java.home") + "/lib/ext/libkyserial.so");
 	}
 
 	public ArrayList<String> list_dev() {
