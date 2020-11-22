@@ -3,6 +3,12 @@ package kyLinkWaveTool.WaveTool;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -23,9 +29,16 @@ public class WaveTool extends ChartPanel implements SeriesChangeListener {
 	private static XYSeriesCollection DataSet = null;
 	AutoIndexer autoIndex = null;
 
+	private static double DataPoints = 500;
+	private JMenuItem DataPointsItem = null;
 	public WaveTool(String Title) {
 		super(createChart(Title));
 		autoIndex = new AutoIndexer();
+
+		DataPointsItem = new JMenuItem("DataPoint");
+		DataPointsItem.addActionListener(DataPointActionListener);
+		JPopupMenu popm = this.getPopupMenu();
+		popm.add(DataPointsItem);
 	}
 
 	private static JFreeChart createChart(String title) {
@@ -35,7 +48,7 @@ public class WaveTool extends ChartPanel implements SeriesChangeListener {
 		ValueAxis valueaxis = xyplot.getDomainAxis();
 		valueaxis.setAutoRange(true);
 //		valueaxis.setInverted(true);
-		valueaxis.setFixedAutoRange(500);
+		valueaxis.setFixedAutoRange(DataPoints);
 		valueaxis.setTickLabelFont(new Font("Courier New", Font.BOLD, 12));
 		valueaxis.setLabelFont(new Font("Courier New", Font.BOLD, 14));
 		xyplot.getRenderer().setSeriesStroke(1, new BasicStroke(3.0f));
@@ -85,8 +98,8 @@ public class WaveTool extends ChartPanel implements SeriesChangeListener {
 		NumberAxis numAxis = ((NumberAxis)freeChart.getXYPlot().getRangeAxis());
 		numAxis.setAutoRangeIncludesZero(flag);
 	}
-	public void setDataPoints(int n) {
-		freeChart.getXYPlot().getDomainAxis().setFixedAutoRange(n);
+	public void setDataPoints(double dataPoints2) {
+		freeChart.getXYPlot().getDomainAxis().setFixedAutoRange(dataPoints2);
 	}
 	public void setAutoRangeMinimumSize(double size) {
 		freeChart.getXYPlot().getRangeAxis().setAutoRangeMinimumSize(size);
@@ -110,4 +123,16 @@ public class WaveTool extends ChartPanel implements SeriesChangeListener {
 	public void seriesChanged(SeriesChangeEvent arg0) {
 		// TODO Auto-generated method stub
 	}
+
+	private ActionListener DataPointActionListener = new ActionListener() {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			// TODO Auto-generated method stub
+			String ret = JOptionPane.showInputDialog("set Data Points:", DataPoints);
+			if(ret != null) {
+				DataPoints = Double.parseDouble(ret);
+				setDataPoints(DataPoints);
+			}
+		}
+	};
 }
