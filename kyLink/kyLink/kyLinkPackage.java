@@ -24,7 +24,8 @@ public class kyLinkPackage {
 	public static final byte TYPE_LINKER_VER_Resp = (byte)0x03;
 	public static final byte TYPE_LINKER_NAME_Req = (byte)0x04;
 
-	public static final String[] DataTypes = {"uint8_t", "uint16_t", "uint32_t", "float", "double", "uint64_t"};
+	public static final String[] DataTypes = 
+		{"uint8_t", "int8_t", "uint16_t", "int16_t", "uint32_t", "int32_t", "float", "double", "uint64_t", "int64_t"};
 
 	public byte stx1;
 	public byte stx2;
@@ -128,13 +129,21 @@ public class kyLinkPackage {
 	public double readoutTypedData(String type, int pos) {
 		if(type.equals("uint8_t")) {
 			return (double)(rData[pos] & 0xFF);
+		} else if(type.equals("int8_t")) {
+			return (double)(rData[pos]);
 		} else if(type.equals("uint16_t")) {
 			return (double)(readoutUShort(pos));
+		} else if(type.equals("int16_t")) {
+			return (double)(readoutShort(pos));
 		} else if(type.equals("uint32_t")) {
+			return (double)(readoutInteger(pos));
+		} else if(type.equals("int32_t")) {
 			return (double)(readoutInteger(pos));
 		} else if(type.equals("float")) {
 			return (double)readoutFloat(pos);
 		} else if(type.equalsIgnoreCase("uint64_t")) {
+			return (double)readoutLong(pos);
+		} else if(type.equals("int64_t")) {
 			return (double)readoutLong(pos);
 		} else if(type.equalsIgnoreCase("double")) {
 			return (double)readoutDouble(pos);
