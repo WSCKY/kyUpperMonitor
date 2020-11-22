@@ -5,7 +5,8 @@ public class kyLinkMember {
 	public String mbrType = "uint8_t";
 	public int mbrOffset = 0;
 	public float mbrValue = 0;
-	public static final String[] DataTypes = {"uint8_t", "uint16_t", "uint32_t", "float", "double", "uint64_t"};
+	public static final String[] DataTypes = 
+		{"uint8_t", "int8_t", "uint16_t", "int16_t", "uint32_t", "int32_t", "float", "double", "uint64_t", "int64_t"};
 	public static final int[] TypeBytes = {1, 2, 4, 4, 8, 8};
 	public kyLinkMember() {}
 	public kyLinkMember(String name) {
