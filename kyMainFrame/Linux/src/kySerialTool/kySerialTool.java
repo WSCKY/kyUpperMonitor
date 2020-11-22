@@ -3,11 +3,10 @@ package kySerialTool;
 import java.util.ArrayList;
 
 import CommTool.CommTool;
+import CommTool.exception.OpenPortFailure;
 import CommTool.exception.ReadDataFailure;
 import CommTool.exception.SendDataFailure;
 import jserial.kySerialDrv;
-import kySerialTool.serialException.NoSuchPort;
-import kySerialTool.serialException.PortOpenFailed;
 
 public final class kySerialTool extends CommTool {
 	private kySerialDrv serialDrv = null;
@@ -33,7 +32,7 @@ public final class kySerialTool extends CommTool {
 		return serialOpened;
 	}
 
-	public boolean openPort(String portName) throws NoSuchPort, PortOpenFailed {
+	public boolean openPort(String portName) throws OpenPortFailure {
 		boolean dev_exit = false;
 		if(serialOpened) return true;
 		for(String s : portNameList) {
@@ -42,10 +41,13 @@ public final class kySerialTool extends CommTool {
 			}
 		}
 		if(dev_exit == false) {
-			throw new NoSuchPort();
+//			throw new NoSuchPort();
+//			System.err.println("No Such Port!");
+			throw new OpenPortFailure("No Such Port!");
 		}
 		if(serialDrv.open(portName, this.Baudrate) < 0) {
-			throw new PortOpenFailed();
+//			throw new PortOpenFailed();
+			throw new OpenPortFailure("Port Open Failed!");
 		} else {
 			serialOpened = true;
 		}
