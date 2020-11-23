@@ -24,8 +24,11 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -92,6 +95,8 @@ public class ManagerGUI extends JPanel implements Runnable {
 		mTable.getColumnModel().getColumn(4).setCellEditor(new DefaultCellEditor(typeBox)); // "combobox"
 		mTable.setRowHeight(25);
 		mTable.setFont(mTable.getFont().deriveFont(Font.BOLD, 16));
+		mTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // select one list index at a time.
+		mTable.setSelectionBackground(Color.LIGHT_GRAY);
 
 		TableRowColorRenderer = new ColorTableRenderer();
 		TableRowColorRenderer.applyTableColorRenderer(mTable.getColumnModel());
@@ -114,6 +119,19 @@ public class ManagerGUI extends JPanel implements Runnable {
 		panel.add(FileNameText, BorderLayout.CENTER); panel.add(SelectBtn, BorderLayout.EAST);
 		this.add(panel, BorderLayout.SOUTH);
 /* Listeners */
+		/* update selection background */
+		mTable.getSelectionModel().addListSelectionListener(
+				new ListSelectionListener() {
+					@Override
+					public void valueChanged(ListSelectionEvent e) {
+						// TODO Auto-generated method stub
+						Color c = TableRowColorRenderer.getRowColor(mTable.getSelectedRow());
+						if(c == null) c = Color.LIGHT_GRAY;
+						mTable.setSelectionBackground(c);
+					}
+				}
+			);
+		/* listen the value update */
 		Model.addTableModelListener(TableListener);
 		groupBox.addItemListener(GroupBoxItemListener);
 		this.addComponentListener(compListener);
@@ -149,6 +167,7 @@ public class ManagerGUI extends JPanel implements Runnable {
 		@Override
 		public void itemStateChanged(ItemEvent e) {
 			// TODO Auto-generated method stub
+			if(GroupList == null) return;
 			if(e.getStateChange() == ItemEvent.SELECTED) {
 				RefreshTable(groupBox.getItemAt(groupBox.getSelectedIndex()));
 				FitTableColumns(mTable);
@@ -172,11 +191,19 @@ public class ManagerGUI extends JPanel implements Runnable {
             	if(Model.getColumnName(column).equals("EN")) {
             		if(TableListenerEnableFlag == true) {
 	            		if((boolean)Model.getValueAt(row, column) == true) {
-	            			TableRowColorRenderer.addRowColor(row, 
-	            					addToObserver((String)Model.getValueAt(row, 2), (String)Model.getValueAt(row, 1)));
+	            			Color c = addToObserver((String)Model.getValueAt(row, 2), (String)Model.getValueAt(row, 1));
+	            			TableRowColorRenderer.addRowColor(row, c);
+	            			/* update selection background */
+	            			if(row == mTable.getSelectedRow()) {
+	            				mTable.setSelectionBackground(c);
+	            			}
 	            		} else {
 	            			removeFromObserver((String)Model.getValueAt(row, 2), (String)Model.getValueAt(row, 1));
 	            			TableRowColorRenderer.removeRowColor(row);
+	            			/* update selection background */
+	            			if(row == mTable.getSelectedRow()) {
+	            				mTable.setSelectionBackground(Color.LIGHT_GRAY);
+	            			}
 	            		}
             		}
             	}
@@ -207,7 +234,7 @@ public class ManagerGUI extends JPanel implements Runnable {
 	}
 
 	private void RefreshTable(String groupName) {
-		synchronized("") {
+//		synchronized("") {
 			Model.setRowCount(0); // clear all elements
 			int Index = DataTool.getGroupIndexByName(groupName);
 			if(Index != -1) {
@@ -224,7 +251,7 @@ public class ManagerGUI extends JPanel implements Runnable {
 					}
 				}
 			}
-		}
+//		}
 	}
 
 	public void DataPackageProcess(kyLinkPackage rxData) {
@@ -386,7 +413,17 @@ public class ManagerGUI extends JPanel implements Runnable {
         } catch (Exception e) {
             System.err.println("Couldn't use system look and feel.");
         }
+		String path = null;
+		if(args.length > 0) path = args[0];
 		ManagerGUI mg = new ManagerGUI();
+		if(path != null) {
+			try {
+				mg.setConfigFile(path);
+			} catch (DocumentException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		JFrame f = new JFrame("example");
 		f.setSize(360, 600);
 		f.setTitle("kyLink Package Manager");
