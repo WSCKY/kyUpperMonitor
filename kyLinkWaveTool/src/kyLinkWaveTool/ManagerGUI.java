@@ -54,13 +54,20 @@ public class ManagerGUI extends JPanel implements Runnable {
 
 	private ArrayList<kyLinkGroup> GroupList = null;
 
+	private static final String GroupNameTotal = "All Packages";
 	private JComboBox<String> groupBox = new JComboBox<String>();
 	private JComboBox<String> typeBox = new JComboBox<String>(kyLinkMember.DataTypes);
 
 	private DataCollecter DataTool = null;
 	private Observer MainObserv = null;
 
-	private static String[] ColumnNames = {"EN", "Argument", "Group", "Value", "Type"};
+	private static final String ColumnName_Enable = "EN";
+	private static final String ColumnName_Member = "Member";
+	private static final String ColumnName_Group = "Group";
+	private static final String ColumnName_Value = "Value";
+	private static final String ColumnName_Type = "Type";
+	private static String[] ColumnNames =
+		{ColumnName_Enable, ColumnName_Member, ColumnName_Group, ColumnName_Value, ColumnName_Type};
 	private DefaultTableModel Model = null;
 	private JTable mTable = null;
 	private ColorTableRenderer TableRowColorRenderer = null;
@@ -80,7 +87,7 @@ public class ManagerGUI extends JPanel implements Runnable {
 		groupBox.setToolTipText("kyLink packages");
 		groupBox.setEditable(false);
 		groupBox.setMaximumRowCount(8);
-		groupBox.addItem("All Packages");
+		groupBox.addItem(GroupNameTotal);
 
 		this.add(groupBox, BorderLayout.NORTH);
 
@@ -119,7 +126,7 @@ public class ManagerGUI extends JPanel implements Runnable {
 		panel.add(FileNameText, BorderLayout.CENTER); panel.add(SelectBtn, BorderLayout.EAST);
 		this.add(panel, BorderLayout.SOUTH);
 /* Listeners */
-		/* update selection background */
+		/* update table row selection background */
 		mTable.getSelectionModel().addListSelectionListener(
 				new ListSelectionListener() {
 					@Override
@@ -131,51 +138,56 @@ public class ManagerGUI extends JPanel implements Runnable {
 					}
 				}
 			);
+		/* new group selected */
+		groupBox.addItemListener(
+				new ItemListener() {
+					@Override
+					public void itemStateChanged(ItemEvent e) {
+						// TODO Auto-generated method stub
+						if(GroupList == null) return;
+						if(e.getStateChange() == ItemEvent.SELECTED) { // new group selected
+							RefreshTableByGroup(groupBox.getItemAt(groupBox.getSelectedIndex())); // 1, refresh table content
+							FitTableColumns(mTable); // 2, fit table columns
+							RefreshTableRowColor(); // 3, refresh table colors
+						}
+					}
+				}
+			);
+		/* component resized */
+		this.addComponentListener(
+				new ComponentAdapter() {
+					@Override
+					public void componentResized(ComponentEvent e) {
+						FitTableColumns(mTable);
+					}
+				}
+			);
 		/* listen the value update */
 		Model.addTableModelListener(TableListener);
-		groupBox.addItemListener(GroupBoxItemListener);
-		this.addComponentListener(compListener);
 
 		TabDataUpdateSemap = new Semaphore(1);
 		(new Thread(this)).start();
-	}
-
-	public void addObserverEventListener(ObserverEventListener l) {
-		MainObserv.addObserverEventListener(l);
 	}
 
 	public void setConfigFile(String path) throws DocumentException {
 		if(DataTool.setConfigFile(path) == true) {
 			FileNameText.setText(path);
 			GroupList = DataTool.decode();
-			updateListUI();
-		}
-	}
-	private void updateListUI() {
-		groupBox.removeAllItems();
-		groupBox.addItem("All Packages");
-		if(GroupList != null) {
-			for(kyLinkGroup g : GroupList) {
-				groupBox.addItem(g.groupName);
+			if(GroupList != null) {
+				groupBox.removeAllItems();
+				groupBox.addItem(GroupNameTotal);
+				for(kyLinkGroup g : GroupList) {
+					groupBox.addItem(g.groupName);
+				}
+				groupBox.setSelectedIndex(0);
+				/* refresh table automatically by listener */
 			}
 		}
-		groupBox.setSelectedIndex(0);
-		/* refresh table automatically by listener */
 	}
 
-	private ItemListener GroupBoxItemListener = new ItemListener() {
-		@Override
-		public void itemStateChanged(ItemEvent e) {
-			// TODO Auto-generated method stub
-			if(GroupList == null) return;
-			if(e.getStateChange() == ItemEvent.SELECTED) {
-				RefreshTable(groupBox.getItemAt(groupBox.getSelectedIndex()));
-				FitTableColumns(mTable);
-				TableRowColorRenderer.clearRowColor();
-				RefreshTableRowColor();
-			}
-		}
-	};
+	public void addObserverEventListener(ObserverEventListener l) {
+		MainObserv.addObserverEventListener(l);
+	}
 
 	private boolean TableListenerEnableFlag = true;
 	private TableModelListener TableListener = new TableModelListener() {
@@ -188,17 +200,24 @@ public class ManagerGUI extends JPanel implements Runnable {
             if(type == TableModelEvent.INSERT) {
             	
             } else if(type == TableModelEvent.UPDATE) {
-            	if(Model.getColumnName(column).equals("EN")) {
+            	if(Model.getColumnName(column).equals(ColumnName_Enable)) { // check if we changed the column of "EN"
             		if(TableListenerEnableFlag == true) {
-	            		if((boolean)Model.getValueAt(row, column) == true) {
-	            			Color c = addToObserver((String)Model.getValueAt(row, 2), (String)Model.getValueAt(row, 1));
+	            		boolean isEnabled = false;
+	            		String groupName = null, membrName = null;
+	            		synchronized(Model) { // we must make sure the "Model" is NOT in changing
+	            			isEnabled = (boolean)Model.getValueAt(row, column);
+	            			groupName = (String)Model.getValueAt(row, Model.findColumn(ColumnName_Group));
+	            			membrName = (String)Model.getValueAt(row, Model.findColumn(ColumnName_Member));
+	            		}
+	            		if(isEnabled) {
+	            			Color c = addToObserver(groupName, membrName);
 	            			TableRowColorRenderer.addRowColor(row, c);
 	            			/* update selection background */
 	            			if(row == mTable.getSelectedRow()) {
 	            				mTable.setSelectionBackground(c);
 	            			}
 	            		} else {
-	            			removeFromObserver((String)Model.getValueAt(row, 2), (String)Model.getValueAt(row, 1));
+	            			removeFromObserver(groupName, membrName);
 	            			TableRowColorRenderer.removeRowColor(row);
 	            			/* update selection background */
 	            			if(row == mTable.getSelectedRow()) {
@@ -233,8 +252,8 @@ public class ManagerGUI extends JPanel implements Runnable {
 		MainObserv.removeObserveMbr(gName + File.separator + mName);
 	}
 
-	private void RefreshTable(String groupName) {
-//		synchronized("") {
+	private void RefreshTableByGroup(String groupName) {
+		synchronized(Model) { // lock Model resource
 			Model.setRowCount(0); // clear all elements
 			int Index = DataTool.getGroupIndexByName(groupName);
 			if(Index != -1) {
@@ -251,7 +270,7 @@ public class ManagerGUI extends JPanel implements Runnable {
 					}
 				}
 			}
-//		}
+		}
 	}
 
 	public void DataPackageProcess(kyLinkPackage rxData) {
@@ -271,7 +290,7 @@ public class ManagerGUI extends JPanel implements Runnable {
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
-		int column = Model.findColumn("Value");
+		int column = Model.findColumn(ColumnName_Value);
 		while(true) {
 			try {
 				TabDataUpdateSemap.acquire();
@@ -334,18 +353,10 @@ public class ManagerGUI extends JPanel implements Runnable {
         }
     }
 
-	private ComponentAdapter compListener = new ComponentAdapter() {
-		@Override
-		public void componentResized(ComponentEvent e) {
-			FitTableColumns(mTable);
-		}
-	};
-
 	private ActionListener SelectNewFileListener = new ActionListener() {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			// TODO Auto-generated method stub
-			
 			int ret = FileChoose.showDialog(null, "Choose");
 			if(ret == JFileChooser.APPROVE_OPTION ) {
 				File file = FileChoose.getSelectedFile();
@@ -364,15 +375,55 @@ public class ManagerGUI extends JPanel implements Runnable {
 		int idx = groupBox.getSelectedIndex();
 		if(idx == 0) {
 			int tabOff = 0;
-			for(kyLinkGroup g : GroupList) {
+			TableRowColorRenderer.clearRowColor(); // clear all colors
+			if(GroupList == null) return;
+			for(kyLinkGroup g : GroupList) { // show all groups
 				ArrayList<kyLinkMember> ml = g.getMemberList();
+				if(ml == null) continue;
 				int gid = g.getIdInteger();
+				MainObserv.takObserveMbr();
 				ArrayList<ObserveMbr> ol = MainObserv.getObserverMbrList();
+				if(ol != null) {
+					for(ObserveMbr omb : ol) {
+						if(omb.getGroupId() == gid) {
+							for(kyLinkMember m : ml) {
+								if(m.mbrOffset == omb.getMbrOffset()) {
+									int row = tabOff + ml.indexOf(m);
+									/* !!!WE MUST CLOSE MODEL UPDATE LISTENER!!! */
+									TableListenerEnableFlag = false; /* !!!STOP LISTENER!!! */
+									Model.setValueAt(true, row, 0);
+									TableRowColorRenderer.addRowColor(row, omb.getColor());
+									TableListenerEnableFlag = true; /* !!!START LISTENER!!! */
+									break;
+								}
+							}
+						}
+					}
+				}
+				MainObserv.relObserveMbr();
+				tabOff += ml.size();
+			}
+		} else {
+			kyLinkGroup g = null;
+			try {
+				g = GroupList.get(idx - 1); // get group object
+			} catch (IndexOutOfBoundsException e) {
+				System.err.println("ERROR: select index out of bounds!");
+				return;
+			}
+			TableRowColorRenderer.clearRowColor(); // clear all colors
+			ArrayList<kyLinkMember> ml = g.getMemberList(); // get member list
+			if(ml == null) return;
+			int gid = g.getIdInteger(); // get group id
+			MainObserv.takObserveMbr();
+			ArrayList<ObserveMbr> ol = MainObserv.getObserverMbrList(); // get observer list
+			if(ol != null) { // null check
 				for(ObserveMbr omb : ol) {
 					if(omb.getGroupId() == gid) {
 						for(kyLinkMember m : ml) {
 							if(m.mbrOffset == omb.getMbrOffset()) {
-								int row = tabOff + ml.indexOf(m);
+								int row = ml.indexOf(m);
+								/* !!!WE MUST CLOSE MODEL UPDATE LISTENER!!! */
 								TableListenerEnableFlag = false; /* !!!STOP LISTENER!!! */
 								Model.setValueAt(true, row, 0);
 								TableRowColorRenderer.addRowColor(row, omb.getColor());
@@ -382,28 +433,8 @@ public class ManagerGUI extends JPanel implements Runnable {
 						}
 					}
 				}
-				tabOff += ml.size();
 			}
-		} else {
-			idx --;
-			kyLinkGroup g = GroupList.get(idx);
-			ArrayList<kyLinkMember> ml = g.getMemberList();
-			int gid = g.getIdInteger();
-			ArrayList<ObserveMbr> ol = MainObserv.getObserverMbrList();
-			for(ObserveMbr omb : ol) {
-				if(omb.getGroupId() == gid) {
-					for(kyLinkMember m : ml) {
-						if(m.mbrOffset == omb.getMbrOffset()) {
-							int row = ml.indexOf(m);
-							TableListenerEnableFlag = false; /* !!!STOP LISTENER!!! */
-							Model.setValueAt(true, row, 0);
-							TableRowColorRenderer.addRowColor(row, omb.getColor());
-							TableListenerEnableFlag = true; /* !!!START LISTENER!!! */
-							break;
-						}
-					}
-				}
-			}
+			MainObserv.relObserveMbr();
 		}
 	}
 
