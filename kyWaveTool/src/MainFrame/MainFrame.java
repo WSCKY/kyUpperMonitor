@@ -1,6 +1,7 @@
 package MainFrame;
 
 import java.awt.BorderLayout;
+import java.io.File;
 
 import javax.swing.JPanel;
 import javax.swing.UIManager;
@@ -43,7 +44,7 @@ public class MainFrame extends kyMainFrame {
 			System.err.println("Couldn't use system look and feel.");
 		}
 		String path = null;
-		if(args.length > 0) path = args[0];
+		if(args.length > 0) path = System.getProperty("user.dir") + File.separator + args[0];
 		(new MainFrame(path)).setVisible(true);
 	}
 }
