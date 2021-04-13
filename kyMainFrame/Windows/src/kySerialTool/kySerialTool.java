@@ -9,6 +9,8 @@ import java.util.TooManyListenersException;
 import java.util.concurrent.Semaphore;
 
 import CommTool.CommTool;
+import CommTool.exception.OpenPortFailure;
+import CommTool.exception.PortActionEventListener.PortActionCode;
 import CommTool.exception.ReadDataFailure;
 import CommTool.exception.SendDataFailure;
 import gnu.io.CommPort;
@@ -58,6 +60,10 @@ public class kySerialTool extends CommTool implements SerialPortEventListener {
 		return true;
 	}
 
+	public boolean openPort(String[] args) throws OpenPortFailure {
+		return false;
+	}
+
 	public SerialPort openPort(String portName) throws NoSuchPort, PortInUse, NotASerialPort, SerialPortParameterFailure, TooManyListeners {
 		try {
 			CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier(portName); // throw no such port.
@@ -70,23 +76,29 @@ public class kySerialTool extends CommTool implements SerialPortEventListener {
 						OpenedSerialPort.addEventListener(this);
 					} catch (TooManyListenersException e) {
 						// TODO Auto-generated catch block
+						this.notifyAllListeners(PortActionCode.PortAction_Failed);
 						throw new TooManyListeners();
 					}
 					OpenedSerialPort.notifyOnDataAvailable(true);
 					OpenedSerialPort.notifyOnBreakInterrupt(true);
+					this.notifyAllListeners(PortActionCode.PortAction_Opened);
 					return OpenedSerialPort;
 				} catch (UnsupportedCommOperationException e) {
 					// TODO Auto-generated catch block
+					this.notifyAllListeners(PortActionCode.PortAction_Failed);
 					throw new SerialPortParameterFailure();
 				}
 			} else {
+				this.notifyAllListeners(PortActionCode.PortAction_Failed);
 				throw new NotASerialPort();
 			}
 		} catch (NoSuchPortException e) {
 			// TODO Auto-generated catch block
+			this.notifyAllListeners(PortActionCode.PortAction_Failed);
 			throw new NoSuchPort();
 		} catch (PortInUseException e) {
 			// TODO Auto-generated catch block
+			this.notifyAllListeners(PortActionCode.PortAction_Failed);
 			throw new PortInUse();
 		}
 	}
@@ -180,6 +192,7 @@ public class kySerialTool extends CommTool implements SerialPortEventListener {
 			OpenedSerialPort.close();
 		}
 		OpenedSerialPort = null;
+		this.notifyAllListeners(PortActionCode.PortAction_Closed);
 	}
 
 	public static void main(String[] args) {

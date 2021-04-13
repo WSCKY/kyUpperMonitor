@@ -6,30 +6,39 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 
 import CommTool.CommTool;
+import CommTool.exception.OpenPortFailure;
 import CommTool.exception.ReadDataFailure;
-import kySocketTool.socketException.SocketInitFailed;
+import CommTool.exception.PortActionEventListener.PortActionCode;
 
 public class kySocketTool extends CommTool {
 	private int CommPort = 6000;
+	private boolean open_flag = false;
 	private DatagramSocket CommSocket = null;
 
 	public kySocketTool() {
 
 	}
 
-	public void openPort() throws SocketInitFailed {
+	public boolean openPort(String[] args) throws OpenPortFailure {
 		try {
 			CommSocket = new DatagramSocket(CommPort);
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
-			throw new SocketInitFailed();
+			System.err.println("error while initialize socket");
+			this.notifyAllListeners(PortActionCode.PortAction_Failed);
+			throw new OpenPortFailure();
 		}
 		try {
 			CommSocket.setSoTimeout(100);
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
+			this.notifyAllListeners(PortActionCode.PortAction_Failed);
 			e.printStackTrace();
+			throw new OpenPortFailure();
 		}
+		open_flag = true;
+		this.notifyAllListeners(PortActionCode.PortAction_Opened);
+		return true;
 	}
 
 	public void setPort(int port) {
@@ -39,7 +48,13 @@ public class kySocketTool extends CommTool {
 	public void closePort() {
 		if(CommSocket != null) {
 			CommSocket.close();
+			open_flag = false;
 		}
+		this.notifyAllListeners(PortActionCode.PortAction_Closed);
+	}
+
+	public boolean isOpened() {
+		return open_flag;
 	}
 
 	public int readData(byte[] recv, int size) throws ReadDataFailure {
