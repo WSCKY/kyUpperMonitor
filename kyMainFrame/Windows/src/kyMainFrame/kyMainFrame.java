@@ -13,6 +13,7 @@ import javax.swing.JPanel;
 import javax.swing.UIManager;
 
 import CommTool.CommTool;
+import CommTool.exception.OpenPortFailure;
 import CommTool.exception.ReadDataFailure;
 import kyLink.decoder.kyLinkDecoder;
 import kyLink.event.kyLinkDecodeEvent;
@@ -26,7 +27,6 @@ import kySerialTool.serialException.PortInUse;
 import kySerialTool.serialException.SerialPortParameterFailure;
 import kySerialTool.serialException.TooManyListeners;
 import kySocketTool.kySocketTool;
-import kySocketTool.socketException.SocketInitFailed;
 
 public class kyMainFrame extends JFrame implements ChangeIfEventListener, kyLinkDecodeEventListener {
 	private static final long serialVersionUID = 112233L;
@@ -120,7 +120,7 @@ public class kyMainFrame extends JFrame implements ChangeIfEventListener, kyLink
 	}
 
 	public CommTool getCommTool() {
-		return UartTool;
+		return commTool;
 	}
 
 	private ActionListener OpenPortListener = new ActionListener() {
@@ -294,10 +294,10 @@ public class kyMainFrame extends JFrame implements ChangeIfEventListener, kyLink
 		} else if(s.equals("WIFI")) {
 			UartTool.closePort();
 			try {
-				SockTool.openPort();
-			} catch (SocketInitFailed e1) {
+				SockTool.openPort(null);
+			} catch (OpenPortFailure e1) {
 				// TODO Auto-generated catch block
-				System.err.println("error: SocketInitFailed");
+				System.err.println("error: failed to open socket!!!");
 			}
 			ifType = IF_TYPE.IF_WIFI;
 			commTool = SockTool;
