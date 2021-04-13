@@ -21,6 +21,7 @@ public class FrameMenuBar extends JMenuBar implements ActionListener {
 	private JMenu ComIfMenu = null;
 	private JCheckBoxMenuItem ItemUartIf = null;
 	private JCheckBoxMenuItem ItemWifiIf = null;
+	private JCheckBoxMenuItem ItemFileIf = null;
 	private ButtonGroup ItemIfGroup = null;
 
 	public FrameMenuBar() {
@@ -29,13 +30,17 @@ public class FrameMenuBar extends JMenuBar implements ActionListener {
 		ItemUartIf.addActionListener(this);
 		ItemWifiIf = new JCheckBoxMenuItem("WIFI", false);
 		ItemWifiIf.addActionListener(this);
+		ItemFileIf = new JCheckBoxMenuItem("FILE", false);
+		ItemFileIf.addActionListener(this);
 		ItemIfGroup.add(ItemUartIf);
 		ItemIfGroup.add(ItemWifiIf);
+		ItemIfGroup.add(ItemFileIf);
 		ComIfMenu = new JMenu("Interface(i)");
 		ComIfMenu.setMnemonic('i');
 		ComIfMenu.setFont(ComIfMenu.getFont().deriveFont(14));
 		ComIfMenu.add(ItemUartIf);
 		ComIfMenu.add(ItemWifiIf);
+		ComIfMenu.add(ItemFileIf);
 		SettingMenu = new JMenu("Setting(s)");
 		SettingMenu.setMnemonic('s');
 		SettingMenu.setFont(SettingMenu.getFont().deriveFont(14));
@@ -46,6 +51,7 @@ public class FrameMenuBar extends JMenuBar implements ActionListener {
 	public String getInterfaceName() {
 		if(ItemUartIf.isSelected()) return "UART";
 		else if(ItemWifiIf.isSelected()) return "WIFI";
+		else if(ItemFileIf.isSelected()) return "FILE";
 		return "ERROR";
 	}
 
@@ -66,6 +72,8 @@ public class FrameMenuBar extends JMenuBar implements ActionListener {
 			publishEvent("UART");
 		} else if(ItemWifiIf.isSelected()) {
 			publishEvent("WIFI");
+		} else if(ItemFileIf.isSelected()) {
+			publishEvent("FILE");
 		}
 	}
 }

@@ -15,11 +15,7 @@ public abstract class CommTool {
 	private ArrayList<PortActionEventListener> Listeners = new ArrayList<PortActionEventListener>();
 
 	public boolean openPort(String[] args) throws OpenPortFailure {
-		throw new OpenPortFailure();
-	}
-
-	public boolean isOpened() {
-		return false;
+		throw new OpenPortFailure("unimplement object");
 	}
 
 	public int sendData(byte[] data, int size) throws SendDataFailure {
@@ -35,9 +31,8 @@ public abstract class CommTool {
 		throw new ReadDataFailure();
 	}
 
-	public void closePort() {
-		
-	}
+	public void closePort() {}
+	public boolean isOpened() { return false; }
 
 	/*
 	 * FOR LISTENERS

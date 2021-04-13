@@ -20,21 +20,23 @@ public class kySocketTool extends CommTool {
 	}
 
 	public boolean openPort(String[] args) throws OpenPortFailure {
+		this.CommPort = Integer.parseInt(args[0]);
 		try {
 			CommSocket = new DatagramSocket(CommPort);
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
+			this.CommSocket = null;
 			System.err.println("error while initialize socket");
 			this.notifyAllListeners(PortActionCode.PortAction_Failed);
-			throw new OpenPortFailure();
+			throw new OpenPortFailure("Socket Initialize Failed!");
 		}
 		try {
-			CommSocket.setSoTimeout(100);
+			CommSocket.setSoTimeout(1000);
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
 			this.notifyAllListeners(PortActionCode.PortAction_Failed);
-			e.printStackTrace();
-			throw new OpenPortFailure();
+			this.CommSocket = null;
+			throw new OpenPortFailure("configure timeout Failed!");
 		}
 		open_flag = true;
 		this.notifyAllListeners(PortActionCode.PortAction_Opened);
@@ -63,7 +65,8 @@ public class kySocketTool extends CommTool {
 			CommSocket.receive(packet);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-//			System.err.println("timeout");
+			return -1;
+//			throw new ReadDataFailure("Socket IO Exception");
 		}
 
 		return packet.getLength();
